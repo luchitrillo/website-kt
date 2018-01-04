@@ -1,0 +1,157 @@
+# VCL file for Varnish.
+
+# It does not do anything by default, delegating control to the
+# builtin VCL. The builtin VCL is called when there is no explicit
+# return statement.
+
+# See the VCL chapters in the Users Guide at https://www.varnish-cache.org/docs/
+# and http://varnish-cache.org/trac/wiki/VCLExamples for more examples.
+
+# Marker to tell the VCL compiler that this VCL has been adapted to the
+# new 4.0 format.
+
+vcl 4.0;
+import directors;
+
+# Default backend definition. Set this to point to your content server.
+backend default {
+    .host = "<%= @backend_server_host %>";
+    .port = "8080";
+}
+
+acl purge {
+    "localhost";
+    "127.0.0.1";
+}
+
+sub vcl_recv {
+        
+        #Set X-Forwarded-For header for logging in nginx
+        set req.http.X-Forwarded-For = client.ip;
+        set req.backend_hint= default;
+        set req.http.X-Forwarded-Proto = "http";
+        unset req.http.Accept-Language;
+        unset req.http.User-Agent;
+
+        #Allow cache-purging requests only from the IP addresses
+        if (req.method == "PURGE") {
+            if (!client.ip ~ purge) {
+              return(synth(405,"Not allowed."));
+            }
+            return (purge);
+        }
+
+        #Redirect HTTP requests to HTTPS
+        #if ( (req.http.host ~ "^(?i)www.flatironschool.com" || req.http.host ~ "^(?i)flatironschool.com" ) && req.http.X-Forwarded-Proto !~ "(?i)https") {
+        #        return (synth(850, ""));
+        #}
+        #X-Forwarded-For header
+                if (req.restarts == 0) {
+                if (req.http.X-Forwarded-For) {
+                set req.http.X-Forwarded-For = client.ip;
+                set req.http.X-Forwarded-Proto = "http";
+                    }
+                 }
+
+        #Exclude RSS feeds
+                if (req.url ~ "/feed") {
+                return (pass);
+                 }
+
+                if (req.url ~ "\.(gif|jpg|jpeg|swf|ttf|css|js|flv|mp3|mp4|pdf|ico|png)(\?.*|)$") {
+                unset req.http.cookie;
+                set req.url = regsub(req.url, "\?.*$", "");
+                }
+
+                if (req.url ~ "\?(utm_(campaign|medium|source|term)|adParams|client|cx|eid|fbid|feed|ref(id|src)?|v(er|iew))=") {
+                set req.url = regsub(req.url, "\?.*$", "");
+                }
+
+                if (req.url ~ "wp-(login|admin)" || req.url ~ "preview=true" || req.url ~ "xmlrpc.php") {
+                return (pass);
+                }
+
+                if (req.http.cookie) {
+                    if (req.http.cookie ~ "(wordpress_|wp-settings-)") {
+                        return(pass);
+                    } else {
+                      unset req.http.cookie;
+                    }
+                }
+ }
+
+# Drop any cookies Wordpress tries to send back to the client.
+
+sub vcl_backend_response {
+    if (bereq.http.Cookie ~ "(UserID|_session)") {
+        set beresp.http.X-Cacheable = "NO:Got Session";
+        set beresp.uncacheable = true;
+        return (deliver);
+
+    } elsif (beresp.ttl <= 0s) {
+        # Varnish determined the object was not cacheable
+        set beresp.http.X-Cacheable = "NO:Not Cacheable";
+
+    } elsif (beresp.http.set-cookie) {
+        # You don't wish to cache content for logged in users
+        set beresp.http.X-Cacheable = "NO:Set-Cookie";
+        set beresp.uncacheable = true;
+        return (deliver);
+
+    } elsif (beresp.http.Cache-Control ~ "private") {
+        # You are respecting the Cache-Control=private header from the backend
+        set beresp.http.X-Cacheable = "NO:Cache-Control=private";
+        set beresp.uncacheable = true;
+        return (deliver);
+
+    } else {
+        # Varnish determined the object was cacheable
+        set beresp.http.X-Cacheable = "YES";
+    }
+
+        if ( (!(bereq.url ~ "(wp-(login|admin)|login)")) || (bereq.method == "GET") ) {
+        unset beresp.http.set-cookie;
+        set beresp.ttl = 1h;
+        }
+
+        if (bereq.url ~ "\.(gif|jpg|jpeg|swf|ttf|css|js|flv|mp3|mp4|pdf|ico|png)(\?.*|)$") {
+            set beresp.ttl = 365d;
+        }
+
+}
+
+sub vcl_hash {
+   if ( req.http.X-Forwarded-Proto ) {
+    hash_data( req.http.X-Forwarded-Proto );
+}
+}
+
+#Redirect HTTP requests to HTTPS
+#sub vcl_synth {
+#    if (resp.status == 850) {
+#        set resp.status = 200;
+#        set resp.http.Location = "https://flatironschool.com" + req.url;
+#        return(deliver);
+#    }
+#}
+sub vcl_deliver {
+
+   if (obj.hits > 0) {
+     set resp.http.X-Cache = "HIT";
+   } else {
+     set resp.http.X-Cache = "MISS";
+   }
+   set resp.http.Access-Control-Allow-Origin = "*";
+}
+
+sub vcl_hit {
+  if (req.method == "PURGE") {
+    return(synth(200,"OK"));
+  }
+}
+
+sub vcl_miss {
+  if (req.method == "PURGE") {
+    return(synth(404,"Not cached"));
+  }
+}

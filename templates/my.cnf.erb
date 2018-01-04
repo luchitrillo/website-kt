@@ -1,0 +1,21 @@
+# Chef generated my.cnf for instance mysql-server
+
+[client]
+default-character-set          = utf8
+port                           = 3306
+socket                         = /run/mysql-server/mysqld.sock
+
+[mysql]
+default-character-set          = utf8
+
+[mysqld]
+user                           = mysql
+pid-file                       = /var/run/mysql-server/mysqld.pid
+socket                         = /var/run/mysql-server/mysqld.sock
+port                           = 3306
+datadir                        = /var/lib/mysql-server
+log-error                      = /var/log/mysql-server/error.log
+!includedir /etc/mysql-server/conf.d
+
+[mysqld_safe]
+socket                         = /run/mysql-server/mysqld.sock

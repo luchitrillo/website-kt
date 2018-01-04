@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+
+gem 'berkshelf'
+gem 'capistrano'
+gem 'capistrano-ext'
+gem 'capistrano-bundler'
+gem 'capistrano-templating'

@@ -1,0 +1,10 @@
+{
+  "id": "deployer",
+  "ssh_keys": ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDVvi3QnXo2OqHJqizxDS8VQ1Pq3ggJNBO/HDR/GL6LaFxbZlXSCTX6EMB1N7Ymp9CnaQkCHwJjjRfUb1vuHj0VjlNvwEQGbdE+ff1x/fzqiv5W9IH/m5lrR2SP7LwvxjZKwqQZ6yUDZ7zj+kUalurIWVZ9d73DZQzp5hhUGVeKpgyWbKPUJFnJmZM2iOhEbkDuYaaCXuiyjy3Duf/YH+TBGfFUyhzcUiRzkM/DOHbV0CU298zhga/WY/mfe20rLQuaIwUcSmFcgiTdpoWDY34srEI9rH9wD4no7Nbs87C5fJQiWaFRAi2VmpvBfFZo1ilhVpiKV7d9DxkWUn33y/1d luchi@PC"
+  ],
+  "groups": [
+    "sysadmin",
+    "wheel"
+  ],
+  "shell": "/bin/bash"
+}

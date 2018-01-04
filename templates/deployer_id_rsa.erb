@@ -1,0 +1,5 @@
+<% @users.each do |user| %>
+  <% user["rsa_private"].each do |private_key| %>
+    <%= private_key %>
+  <% end %>
+<% end %>

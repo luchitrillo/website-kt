@@ -1,0 +1,25 @@
+#!/bin/bash
+
+echo
+echo "Application: <%= node['fqdn'].split('.').first %>"
+echo "Environment: <%= node.chef_environment %>"
+echo "Uptime: `uptime | cut -d, -f1 | awk '{print $3,$4}'`"
+cat << "EOF"
+
+      /||
+     //||
+    // ||
+   //  ||
+  //   ||
+ //    ||
+||||||||||||||||
+       ||    //
+       ||   //
+       ||  //
+       || //
+       ||//
+       ||/
+
+EOF
+echo "Learn, Love, Code..."
+echo
